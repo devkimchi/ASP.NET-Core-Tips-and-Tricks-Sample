@@ -1,5 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
+
+using AspNetCoreTipsAndTricksSample.Responses;
 
 namespace AspNetCoreTipsAndTricksSample.Services
 {
@@ -11,7 +12,7 @@ namespace AspNetCoreTipsAndTricksSample.Services
         /// <summary>
         /// Gets the list of values.
         /// </summary>
-        /// <returns>Returns the list of values.</returns>
-        IEnumerable<string> GetValues();
+        /// <returns>Returns the <see cref="ValueResponse"/> object.</returns>
+        ValueResponse GetValues();
     }
 }

@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+﻿using AspNetCoreTipsAndTricksSample.Responses;
 
 namespace AspNetCoreTipsAndTricksSample.Services
 {
@@ -12,10 +12,11 @@ namespace AspNetCoreTipsAndTricksSample.Services
         /// <summary>
         /// Gets the list of values.
         /// </summary>
-        /// <returns>Returns the list of values.</returns>
-        public IEnumerable<string> GetValues()
+        /// <returns>Returns the <see cref="ValueResponse"/> object.</returns>
+        public ValueResponse GetValues()
         {
-            return new[] { "value1", "value2" };
+            var values = new[] { "value1", "value2" };
+            return new ValueResponse() { Values = values };
         }
 
         /// <summary>

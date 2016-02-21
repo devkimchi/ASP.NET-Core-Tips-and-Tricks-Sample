@@ -1,6 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
 
+using AspNetCoreTipsAndTricksSample.Responses;
 using AspNetCoreTipsAndTricksSample.Services;
 
 using Microsoft.AspNet.Mvc;
@@ -35,7 +35,7 @@ namespace AspNetCoreTipsAndTricksSample.Controllers
         /// <returns>Returns the list of values.</returns>
         [HttpGet]
         [Route("")]
-        [Produces(typeof(IEnumerable<string>))]
+        [Produces(typeof(ValueResponse))]
         public IActionResult Get()
         {
             var result = this._service.GetValues();

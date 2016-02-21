@@ -12,6 +12,10 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Win32;
 
+using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
+using Newtonsoft.Json.Serialization;
+
 namespace AspNetCoreTipsAndTricksSample
 {
     /// <summary>
@@ -50,18 +54,8 @@ namespace AspNetCoreTipsAndTricksSample
         /// <remarks>This method gets called by the runtime. Use this method to add services to the container.</remarks>
         public IServiceProvider ConfigureServices(IServiceCollection services)
         {
-            services.AddMvc();
-
-            //services.AddTransient<IValueService, ValueService>();
-
-            var builder = new ContainerBuilder();
-
-            builder.RegisterType<ValueService>().As<IValueService>();
-
-            builder.Populate(services);
-
-            var container = builder.Build();
-            return container.Resolve<IServiceProvider>();
+            this.ConfigureMvc(services);
+            return this.ConfigureDependencies(services);
         }
 
         /// <summary>
@@ -89,5 +83,34 @@ namespace AspNetCoreTipsAndTricksSample
         /// </summary>
         /// <param name="args">List of arguments.</param>
         public static void Main(string[] args) => WebApplication.Run<Startup>(args);
+
+        private void ConfigureMvc(IServiceCollection services)
+        {
+            var builder = services.AddMvc();
+
+            builder.AddJsonOptions(
+                o =>
+                    {
+                        o.SerializerSettings.ContractResolver = new CamelCasePropertyNamesContractResolver();
+                        o.SerializerSettings.Converters.Add(new StringEnumConverter());
+                        o.SerializerSettings.Formatting = Formatting.Indented;
+                        o.SerializerSettings.NullValueHandling = NullValueHandling.Ignore;
+                        o.SerializerSettings.MissingMemberHandling = MissingMemberHandling.Ignore;
+                    });
+        }
+
+        private IServiceProvider ConfigureDependencies(IServiceCollection services)
+        {
+            //services.AddTransient<IValueService, ValueService>();
+
+            var builder = new ContainerBuilder();
+
+            builder.RegisterType<ValueService>().As<IValueService>();
+
+            builder.Populate(services);
+
+            var container = builder.Build();
+            return container.Resolve<IServiceProvider>();
+        }
     }
 }
