@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Reflection;
 
 using AspNetCoreTipsAndTricksSample.Services;
 
@@ -10,11 +11,14 @@ using Microsoft.AspNet.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Microsoft.Win32;
+using Microsoft.Extensions.PlatformAbstractions;
 
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 using Newtonsoft.Json.Serialization;
+
+using Swashbuckle.SwaggerGen;
+using Swashbuckle.SwaggerGen.XmlComments;
 
 namespace AspNetCoreTipsAndTricksSample
 {
@@ -26,10 +30,14 @@ namespace AspNetCoreTipsAndTricksSample
         /// <summary>
         /// Initializes a new instance of the <see cref="Startup"/> class.
         /// </summary>
+        /// <param name="env"><see cref="IHostingEnvironment"/> instance.</param>
+        /// <param name="appEnv"><see cref="IApplicationEnvironment"/> instance.</param>
         /// <param name="args">List of arguments from the command line.</param>
-        public Startup(string[] args = null)
+        public Startup(IHostingEnvironment env, IApplicationEnvironment appEnv, string[] args = null)
         {
-            // Set up configuration sources.
+            this.HostingEnvironment = env;
+            this.ApplicationEnvironment = appEnv;
+
             var builder = new ConfigurationBuilder()
                               .AddJsonFile("appsettings.json")
                               .AddEnvironmentVariables();
@@ -41,6 +49,16 @@ namespace AspNetCoreTipsAndTricksSample
 
             this.Configuration = builder.Build();
         }
+
+        /// <summary>
+        /// Gets the <see cref="IHostingEnvironment"/> instance.
+        /// </summary>
+        public IHostingEnvironment HostingEnvironment { get; }
+
+        /// <summary>
+        /// Gets the <see cref="IApplicationEnvironment"/> instance.
+        /// </summary>
+        public IApplicationEnvironment ApplicationEnvironment { get; }
 
         /// <summary>
         /// Gets the <see cref="IConfigurationRoot"/> instance.
@@ -55,6 +73,7 @@ namespace AspNetCoreTipsAndTricksSample
         public IServiceProvider ConfigureServices(IServiceCollection services)
         {
             this.ConfigureMvc(services);
+            this.ConfigureSwagger(services, this.ApplicationEnvironment);
             return this.ConfigureDependencies(services);
         }
 
@@ -76,6 +95,9 @@ namespace AspNetCoreTipsAndTricksSample
             app.UseStaticFiles();
 
             app.UseMvc();
+
+            app.UseSwaggerGen();
+            app.UseSwaggerUi();
         }
 
         /// <summary>
@@ -99,6 +121,28 @@ namespace AspNetCoreTipsAndTricksSample
                     });
         }
 
+        private void ConfigureSwagger(IServiceCollection services, IApplicationEnvironment appEnv)
+        {
+            services.AddSwaggerGen();
+
+            services.ConfigureSwaggerDocument(
+                options =>
+                {
+                    options.SingleApiVersion(new Info() { Version = "v1", Title = "Swagger UI" });
+                    options.IgnoreObsoleteActions = true;
+                    options.OperationFilter(new ApplyXmlActionComments(GetXmlPath(appEnv)));
+                });
+
+            services.ConfigureSwaggerSchema(
+                options =>
+                {
+                    options.DescribeAllEnumsAsStrings = true;
+                    options.IgnoreObsoleteProperties = true;
+                    options.CustomSchemaIds(type => type.FriendlyId(true));
+                    options.ModelFilter(new ApplyXmlTypeComments(GetXmlPath(appEnv)));
+                });
+        }
+
         private IServiceProvider ConfigureDependencies(IServiceCollection services)
         {
             //services.AddTransient<IValueService, ValueService>();
@@ -111,6 +155,18 @@ namespace AspNetCoreTipsAndTricksSample
 
             var container = builder.Build();
             return container.Resolve<IServiceProvider>();
+        }
+        private static string GetXmlPath(IApplicationEnvironment appEnv)
+        {
+            var assembly = typeof(Startup).GetTypeInfo().Assembly;
+            var buildConfig = "Release";
+
+#if DEBUG
+            buildConfig = "Debug";
+#endif
+
+            var path = $@"{appEnv.ApplicationBasePath}\..\..\artifacts\bin\{assembly.GetName().Name}\{buildConfig}\dnx451\{assembly.GetName().Name}.xml";
+            return path;
         }
     }
 }
