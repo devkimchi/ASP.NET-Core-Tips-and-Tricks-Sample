@@ -159,6 +159,7 @@ namespace AspNetCoreTipsAndTricksSample
             var container = builder.Build();
             return container.Resolve<IServiceProvider>();
         }
+
         private static string GetXmlPath(IApplicationEnvironment appEnv)
         {
             var assembly = typeof(Startup).GetTypeInfo().Assembly;
