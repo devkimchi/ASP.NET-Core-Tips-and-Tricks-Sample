@@ -1,6 +1,8 @@
 ﻿using System;
+using System.IO;
 using System.Reflection;
 
+using AspNetCoreTipsAndTricksSample.Filters;
 using AspNetCoreTipsAndTricksSample.Services;
 
 using Autofac;
@@ -131,6 +133,7 @@ namespace AspNetCoreTipsAndTricksSample
                     options.SingleApiVersion(new Info() { Version = "v1", Title = "Swagger UI" });
                     options.IgnoreObsoleteActions = true;
                     options.OperationFilter(new ApplyXmlActionComments(GetXmlPath(appEnv)));
+                    options.DocumentFilter<SchemaDocumentFilter>();
                 });
 
             services.ConfigureSwaggerSchema(
@@ -159,13 +162,18 @@ namespace AspNetCoreTipsAndTricksSample
         private static string GetXmlPath(IApplicationEnvironment appEnv)
         {
             var assembly = typeof(Startup).GetTypeInfo().Assembly;
-            var buildConfig = "Release";
+            var assemblyName = assembly.GetName().Name;
 
-#if DEBUG
-            buildConfig = "Debug";
-#endif
+            var path = $@"{appEnv.ApplicationBasePath}\{assemblyName}.xml";
+            if (File.Exists(path))
+            {
+                return path;
+            }
 
-            var path = $@"{appEnv.ApplicationBasePath}\..\..\artifacts\bin\{assembly.GetName().Name}\{buildConfig}\dnx451\{assembly.GetName().Name}.xml";
+            var config = appEnv.Configuration;
+            var runtime = $"{appEnv.RuntimeFramework.Identifier.ToLower()}{appEnv.RuntimeFramework.Version.ToString().Replace(".", string.Empty)}";
+
+            path = $@"{appEnv.ApplicationBasePath}\..\..\artifacts\bin\{assemblyName}\{config}\{runtime}\{assemblyName}.xml";
             return path;
         }
     }
