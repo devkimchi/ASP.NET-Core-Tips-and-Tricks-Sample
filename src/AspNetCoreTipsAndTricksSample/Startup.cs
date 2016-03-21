@@ -111,6 +111,9 @@ namespace AspNetCoreTipsAndTricksSample
         /// <remarks>This method gets called by the runtime. Use this method to configure the HTTP request pipeline.</remarks>
         public void Configure(IApplicationBuilder app, IHostingEnvironment env, ILoggerFactory logger)
         {
+            logger.AddConsole(this.Configuration.GetSection("Logging"));
+            logger.AddDebug();
+
             var log = logger.CreateLogger<Startup>();
             if (this._exceptions.Any(p => p.Value.Any()))
             {
@@ -134,9 +137,6 @@ namespace AspNetCoreTipsAndTricksSample
 
             try
             {
-                logger.AddConsole(this.Configuration.GetSection("Logging"));
-                logger.AddDebug();
-
                 app.UseExceptionHandler(
                     builder =>
                         {
